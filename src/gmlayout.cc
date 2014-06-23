@@ -8,8 +8,7 @@
 
 #include <string>
 
-#include "ogdf/planarlayout/PlanarStraightLayout.h"
-#include <ogdf/basic/PreprocessorLayout.h>
+#include <ogdf/energybased/FMMMLayout.h>
  
 void usage() {
 	std::cout << "gmlayout [-i input]" << std::endl;
@@ -36,8 +35,7 @@ int main(int argc, char* argv[]) {
 	}
 	typedef ogdf::Graph Graph;
 	typedef ogdf::GraphAttributes GraphA;
-	typedef ogdf::PlanarStraightLayout PSL;
-	typedef ogdf::PreprocessorLayout PL;
+	typedef ogdf::FMMMLayout FL;
 
 	Graph G;
 	GraphA GA(G);
@@ -58,9 +56,8 @@ int main(int argc, char* argv[]) {
 		GA.height(v) = 10.0;
 	}
  	
-	PL pre;
-	pre.setLayoutModule(new PSL);
-	pre.call(GA);
+	FL l;
+	l.call(GA);
 
 	GA.writeGML(std::cout); 
  
