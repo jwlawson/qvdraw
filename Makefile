@@ -34,10 +34,12 @@ LFLAGS = -L$(BASE_DIR)/lib -L$(HOME)/lib
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
-LIBS = -lqv
+LIBS = -lqv -lOGDF -pthread
 
 # define the C source files
 SRCS = $(wildcard $(SRC_DIR)/*.cc)
+_GML_SRC = $(SRC_DIR)/qv2gml.cc $(SRC_DIR)/graph_factory.cc
+_LAY_SRC = $(SRC_DIR)/gmlayout.cc
 
 # define the C object files
 #
@@ -48,12 +50,20 @@ SRCS = $(wildcard $(SRC_DIR)/*.cc)
 # with the .o suffix
 #
 _OBJS = $(SRCS:.cc=.o)
+_GML_OBJS = $(_GML_SRC:.cc=.o)
+_LAY_OBJS = $(_LAY_SRC:.cc=.o)
 
 # Puts objs in obj_dir
 OBJS = $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(_OBJS))
+GML_OBJS = $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(_GML_OBJS))
+LAY_OBJS = $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(_LAY_OBJS))
+
 
 # define the executable file 
 MAIN = qvdraw
+GML = qv2gml
+LAY = gmlayout
+
 
 #
 # The following part of the makefile is generic; it can be used to
@@ -63,10 +73,16 @@ MAIN = qvdraw
 
 .PHONY: clean
 
-all:   $(MAIN)
+all:   $(GML) $(LAY)
 
 $(MAIN): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OPT) $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)
+
+$(GML): $(GML_OBJS)
+	$(CXX) $(CXXFLAGS) $(OPT) $(INCLUDES) -o $(GML) $(GML_OBJS) $(LFLAGS) $(LIBS)
+
+$(LAY): $(LAY_OBJS)
+	$(CXX) $(CXXFLAGS) $(OPT) $(INCLUDES) -o $(LAY) $(LAY_OBJS) $(LFLAGS) $(LIBS)
 
 # this is a suffix replacement rule for building .o's from .c's
 # it uses automatic variables $<: the name of the prerequisite of
@@ -80,7 +96,7 @@ $(OBJ_DIR)/%.o: $(TEST_DIR)/%.cc
 	$(CXX) $(CXXFLAGS) $(OPT) $(INCLUDES) -c $<  -o $@
 
 clean:
-	$(RM) *.o *~ $(MAIN) $(OBJ_DIR)/*.o
+	$(RM) *.o *~ $(MAIN) $(OBJ_DIR)/*.o $(GML)
 
 depend: $(SRCS)
 	makedepend $(INCLUDES) $^
