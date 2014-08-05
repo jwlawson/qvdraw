@@ -55,8 +55,15 @@ int main(int argc, char* argv[]) {
 		GA.width(v) = 10.0;
 		GA.height(v) = 10.0;
 	}
- 	
+
 	FL l;
+	l.useHighLevelOptions(true);
+	l.qualityVersusSpeed(l.qvsGorgeousAndEfficient);
+	/*
+	 * Setting to true changes the output graphs. Sometimes they look better,
+	 * other times they do not. I have no idea why. Default is false.
+	 */
+	l.newInitialPlacement(true);
 	l.call(GA);
 
 	GA.writeGML(std::cout); 

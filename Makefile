@@ -7,7 +7,7 @@
 
 # define any compile-time flags
 # Using cygwin -std=gnu++11 should be used rather than -std=c++11
-CXXFLAGS = -Wall -Wextra -Wpedantic -std=gnu++11 -march=native
+CXXFLAGS = -Wall -Wextra -Wpedantic -Wno-unused-parameter -std=gnu++11 -march=native
 OPT = -g -O3
 
 # Specify base directory

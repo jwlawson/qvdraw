@@ -5,19 +5,40 @@
 
 count=1
 
+flag="$1"
+if [ "$1" == "-n" ]; then
+	arrow=true
+	shift
+fi
+
 function draw {
 	matrix="$@"
 	cmd="qv2gml -m \"${matrix}\" | gmlayout > tmp.gml"
 	eval $cmd
-	gml2pic -o ${count}.png tmp.gml > /dev/null
+	opt="-msg-level silent"
+	if [ $arrow ]
+	then
+		opt="$opt -arrows none"
+	fi
+	dcmd="gml2pic $opt -o ${count}.png tmp.gml > /dev/null"
+	eval $dcmd
 	rm -f tmp.gml
 	count=$((count+1))
 }
 
-f="$1"
-
-while read p
-do
-	draw $p
-done < $f
+# Check number of parameters, if there are none, assume that input is stdin
+# otherwise the input comes from the file named in the parameter.
+if [ "$#" -eq 0 ]
+then
+	while read p
+	do
+		draw "$p"
+	done
+else
+	f="$1"
+	while read p
+	do
+		draw "$p"
+	done < $f
+fi
 
