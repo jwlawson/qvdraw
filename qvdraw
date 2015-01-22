@@ -6,6 +6,12 @@
 count=1
 
 flag="$1"
+if [ "$flag" == "-h" ]; then
+	echo "qvdraw [-n] [filename]"
+	echo "If no filename is specified then input is taken from stdin."
+	echo "  -n Do not draw arrows on quivers. "
+	exit
+fi
 if [ "$1" == "-n" ]; then
 	arrow=true
 	shift
