@@ -78,3 +78,4 @@ libraries, by changing the `INCLUDES` and `LFLAGS` variables.
 
 [gml2pic site]: http://www.ogdf.net/doku.php/project:gml2pic
 [OGDF site]: http://www.ogdf.net/ogdf.php
+[libqv site]: http://github.com/jwlawson/qv
