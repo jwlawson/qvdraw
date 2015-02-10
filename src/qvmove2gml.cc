@@ -1,5 +1,5 @@
 /**
- * gmlayout.cc
+ * qvmove2gml.cc
  * Copyright 2014-2015 John Lawson
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,56 +16,58 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Program to layout a graph provided in GML format. Outputs an updated GML file
- * with the layout information included.
+ * Converts a matrix to gml format.
  */
 #include <unistd.h>
 
 #include <string>
 
-#include "layout.h"
- 
+#include "qv/move_graph.h"
+
+#include "consts.h"
+#include "graph_factory.h"
+
 void usage() {
-	std::cout << "gmlayout [-i input]" << std::endl;
-	std::cout << "Layout a graph in GML format in a planar way." << std::endl;
-	std::cout << "  -i Input file to read. Defualt is stdin" << std::endl;
+	std::cout << "qvmove2gml -m matrix" << std::endl;
+}
+
+cluster::QuiverMatrix get_matrix(const std::string& matrix) {
+	return std::move(cluster::QuiverMatrix(matrix));
+}
+
+void output_gml(const cluster::MoveGraph<cluster::EquivQuiverMatrix>& mat) {
+	qvdraw::GraphPair g = qvdraw::graph_factory::multi_graph(mat);
+	g.first.writeGML(std::cout);
 }
 
 int main(int argc, char* argv[]) {
+	bool matrix = false;
 	std::string str;
 	int c;
 
-	while((c = getopt(argc, argv, "i:")) != -1) {
+	while( (c=getopt(argc, argv, "m:")) != -1) {
 		switch(c) {
-			case 'i':
+			case 'm':
+				matrix = true;
 				str = optarg;
 				break;
 			case '?':
 				usage();
-				break;
+				return 1;
 			default:
 				usage();
-				break;
+				return 2;
 		}
 	}
-	typedef ogdf::Graph Graph;
-	typedef ogdf::GraphAttributes GraphA;
-
-	Graph G;
-	GraphA GA(G);
-	if(str.empty()) {
-		if(!G.readGML(std::cin)) {
-			std::cerr << "Error reading GML from stdin" << std::endl;
-		}
-	} else {
-		if(!G.readGML(str.data())) {
-			std::cerr << "Could not load " << str << std::endl;
-			return 1;
-		}
+	if(!matrix) {
+		usage();
+		return 1;
 	}
-	qvlayout::layout(G, GA);
-
-	GA.writeGML(std::cout); 
- 
+	typedef cluster::EquivQuiverMatrix Matrix;
+	typedef cluster::MoveGraph<Matrix> Move;
+	Matrix mat = get_matrix(str);
+	Move move_graph(mat,qvdraw::consts::Moves);
+	output_gml(move_graph);
 	return 0;
 }
+
