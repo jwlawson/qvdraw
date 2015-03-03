@@ -18,30 +18,87 @@
 /**
  * Function to layout a graph.
  */
+#include "layout.h"
+
 #include <ogdf/energybased/FMMMLayout.h>
+
+#include <ogdf/layered/SugiyamaLayout.h>
+#include <ogdf/layered/OptimalRanking.h>
+#include <ogdf/layered/MedianHeuristic.h>
+#include <ogdf/layered/OptimalHierarchyLayout.h>
+
+#include <ogdf/misclayout/BalloonLayout.h>
+
+#include <ogdf/upward/DominanceLayout.h>
+#include <ogdf/upward/LayerBasedUPRLayout.h>
+#include <ogdf/upward/SubgraphUpwardPlanarizer.h>
+#include <ogdf/upward/UpwardPlanarizationLayout.h>
+#include <ogdf/upward/VisibilityLayout.h>
  
 namespace qvlayout {
 namespace {
 typedef ogdf::Graph Graph;
 typedef ogdf::GraphAttributes GraphA;
 typedef ogdf::FMMMLayout FL;
+typedef ogdf::UpwardPlanarizationLayout UPL;
 }
 
-void layout(Graph & graph, GraphA & attr, int size = 10) {
+void layout(Graph & graph, GraphA & attr, int size, Method method) {
 	ogdf::node v;
 	forall_nodes(v, graph) {
 		attr.width(v) = size;
 		attr.height(v) = size;
 	}
-
-	FL l;
-	l.useHighLevelOptions(true);
-	l.qualityVersusSpeed(l.qvsGorgeousAndEfficient);
-	/*
-	 * Setting to true changes the output graphs. Sometimes they look better,
-	 * other times they do not. I have no idea why. Default is false.
-	 */
-	l.newInitialPlacement(true);
-	l.call(attr);
+	switch(method) {
+		case Method::Energy:
+			{
+			FL l;
+			l.useHighLevelOptions(true);
+			l.qualityVersusSpeed(l.qvsGorgeousAndEfficient);
+			/*
+			 * Setting to true changes the output graphs. Sometimes they look better,
+			 * other times they do not. I have no idea why. Default is false.
+			 */
+			l.newInitialPlacement(true);
+			l.call(attr);
+			break;
+			}
+		case Method::Hierachy:
+			{
+			UPL k;
+			k.setUPRLayout(new ogdf::LayerBasedUPRLayout());
+			k.setUpwardPlanarizer(new ogdf::SubgraphUpwardPlanarizer());
+			k.call(attr);
+			break;
+			}
+		case Method::Layered:
+			{
+			ogdf::SugiyamaLayout SL;
+			SL.setRanking(new ogdf::OptimalRanking());
+			SL.setCrossMin(new ogdf::MedianHeuristic());
+			ogdf::OptimalHierarchyLayout * l = new ogdf::OptimalHierarchyLayout();
+			SL.setLayout(l);
+			SL.call(attr);
+			break;
+			}
+		case Method::Dominance:
+			{
+			ogdf::DominanceLayout layout;
+			layout.call(attr);
+			break;
+			}
+		case Method::Visibility:
+			{
+			ogdf::VisibilityLayout layout;
+			layout.call(attr);
+			break;
+			}
+		case Method::Balloon:
+			{
+			ogdf::BalloonLayout layout;
+			layout.call(attr);
+			break;
+			}
+	}
 }
 }

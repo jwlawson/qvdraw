@@ -57,6 +57,13 @@ namespace graph_factory {
 			}
 			return find->second;
 		}
+		NodeMap switch_map(const EQPtrMap & map) {
+			NodeMap result;
+			for(auto it = map.begin(); it != map.end(); ++it) {
+				result.insert(std::make_pair(it->second, it->first));
+			}
+			return std::move(result);
+		}
 	}
 	template<class G>
 	GraphPair multi_graph(const G & g) {
@@ -71,7 +78,7 @@ namespace graph_factory {
 				result.newEdge(node, linked);
 			}
 		}
-		return std::make_pair(std::move(result),std::move(map));
+		return std::make_pair(std::move(result),std::move(switch_map(map)));
 	}
 	template GraphPair
 		multi_graph<cluster::MoveGraph<EQ>>(const cluster::MoveGraph<EQ> &);

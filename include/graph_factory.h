@@ -35,15 +35,22 @@ struct PtrEqual {
 	bool operator()(EQPtr lhs, EQPtr rhs) const {
 		return lhs->equals(*rhs);
 	}
+	bool operator()(Node lhs, Node rhs) const {
+		return lhs == rhs;
+	}
 };
 struct PtrHash {
 	size_t operator()(EQPtr ptr) const {
 		return ptr->hash();
 	}
+	bool operator()(Node ptr) const {
+		return ptr;
+	}
 };
 }
+typedef std::unordered_map<graph_types::Node, graph_types::EQPtr> NodeMap;
 typedef std::unordered_map<graph_types::EQPtr, graph_types::Node,
-				graph_types::PtrHash, graph_types::PtrEqual> NodeMap;
+				graph_types::PtrHash, graph_types::PtrEqual> EQPtrMap;
 typedef std::pair<ogdf::Graph, NodeMap> GraphPair;
 namespace graph_factory{
 	/**

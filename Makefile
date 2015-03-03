@@ -1,5 +1,6 @@
 # Using cygwin -std=gnu++11 should be used rather than -std=c++11
 CXXFLAGS = -Wall -Wextra -Wpedantic -Wno-unused-parameter -std=gnu++11 -march=native
+CXXFLAGS += -DUSE_COIN -DCOIN_OSI_CLP -DOGDF_DLL
 OPT = -g -O3
 
 # Specify base directory
@@ -18,7 +19,7 @@ INCLUDES = -I$(BASE_DIR)/include -I$(HOME)/include
 LFLAGS = -L$(BASE_DIR)/lib -L$(HOME)/lib
 
 # define any libraries to link into executable:
-LIBS = -lqv -lOGDF -pthread
+LIBS = -lqv -pthread -lCoinUtils -lOsi -lOsiClp -lClp -lOGDF
 
 # define the C source files
 _GML_SRC = $(SRC_DIR)/qv2gml.cc $(SRC_DIR)/graph_factory.cc
@@ -67,7 +68,7 @@ $(DRA): $(DRA_OBJS)
 	$(CXX) $(CXXFLAGS) $(OPT) $(INCLUDES) -o $(DRA) $(DRA_OBJS) $(LFLAGS) $(LIBS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc
-	$(CXX) $(CXXFLAGS) $(OPT) $(INCLUDES) -c $<  -o $@
+	$(CXX) $(CXXFLAGS) $(OPT) $(INCLUDES) -c $< -o $@
 	
 $(LAY_OBJS): | $(OBJ_DIR)
 

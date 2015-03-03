@@ -8,6 +8,7 @@
 #include "ogdf/basic/GraphAttributes.h"
 
 namespace qvlayout {
+enum Method { Energy, Hierachy, Layered, Visibility, Dominance, Balloon};
 /**
  * Use an energy based layout algorithm to try and find optimal positions for
  * the vertices. This will not always result in the best layout, but will
@@ -15,6 +16,10 @@ namespace qvlayout {
  *
  * The positions of nodes are stored in the GraphAttributes object.
  */
-void layout(ogdf::Graph & graph, ogdf::GraphAttributes & attr, int size = 10);
+void layout(
+		ogdf::Graph & graph,
+		ogdf::GraphAttributes & attr,
+		int size = 10,
+		Method = Method::Energy);
 }
 

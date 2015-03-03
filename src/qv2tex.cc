@@ -10,6 +10,9 @@
 #include "ogdf/basic/Graph.h"
 #include "ogdf/basic/GraphAttributes.h"
 
+#include "qv/move_graph.h"
+
+#include "consts.h"
 #include "graph_factory.h"
 #include "layout.h"
 
@@ -59,10 +62,58 @@ void box_quiver(std::ostream & os,
 		const std::string & name,
 		const ogdf::Graph & graph,
 		const ogdf::GraphAttributes & attr) {
-	os << "\\newsavebox{\\" << name << os.widen('\n');
+	os << "\\newsavebox{\\" << name << "}" << os.widen('\n');
 	os << "\\sbox{\\" << name << "}{%" << os.widen('\n');
+	os << "\\scalebox{0.01}{\\framebox{%" << os.widen('\n');
 	draw_quiver(os, graph, attr);
-	os << "}" << os.widen('\n');
+	os << "}}}" << os.widen('\n');
+}
+std::string int_to_str(int a) {
+	char lookup[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'k', 'i', 'j'};
+	std::string result;
+	if(a == 0 ) {
+		result += lookup[0];
+	}
+	while(a > 0) {
+		result += lookup[a % 10];
+		a = a / 10;
+	}
+	return result;
+}
+void draw_multi_graph(std::ostream & os,
+		const qvdraw::NodeMap & map,
+		const ogdf::Graph & graph,
+		const ogdf::GraphAttributes & attr) {
+	ogdf::node node;
+	forall_nodes(node, graph) {
+		cluster::EquivQuiverMatrix & mat = *map.at(node);
+		ogdf::Graph n_graph = qvdraw::graph_factory::graph(mat);
+		ogdf::GraphAttributes n_attr(n_graph);
+		qvlayout::layout(n_graph, n_attr);
+		box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr);
+	}
+	os << "\\begin{tikzpicture}[x=.1pt,y=.1pt]" << os.widen('\n');
+	forall_nodes(node, graph) {
+		std::string name = "node" + int_to_str(node->index());
+//		os << "\\newlength{\\" << name << "h}" << os.widen('\n');
+//		os << "\\newlength{\\" << name << "w}" << os.widen('\n');
+//		os << "\\settoheight{\\" << name << "h}{\\usebox{\\" << name << "}}"
+//			<< os.widen('\n') << "\\settowidth{\\" << name << "w}{\\usebox{\\"
+//			<< name << "}}" << os.widen('\n');
+		os << "\\node" 
+//			"[minimum height=\\" << name <<"h,minimum width=\\" << name	<< "h]"
+"[inner sep=.2pt]"
+			" (n" << node->index() << ") at ("  << attr.x(node) << ","
+			<< attr.y(node) << "){\\usebox{\\node" << int_to_str(node->index()) << "}};"
+			<< os.widen('\n');
+	}
+	ogdf::edge e;
+	forall_edges(e, graph) {
+		os << "\\draw[line width=.01pt,blue](";
+		os << "n" << e->source()->index() << ") -- (n" << e->target()->index()
+			<< ");" << os.widen('\n');
+	}
+	os << "\\end{tikzpicture}" << os.widen('\n');
 }
 }
 void usage() {
@@ -104,9 +155,9 @@ int main(int argc, char* argv[]) {
 		usage();
 		return 1;
 	}
-	cluster::IntMatrix matrix(mat_str);
 	std::ostream & os = std::cout;
 	if(func == Func::quiver) {
+		cluster::IntMatrix matrix(mat_str);
 		ogdf::Graph graph = qvdraw::graph_factory::graph(matrix);
 		ogdf::GraphAttributes attr(graph);
 		qvlayout::layout(graph, attr);
@@ -116,7 +167,19 @@ int main(int argc, char* argv[]) {
 		qv2tex::end(os);
 	}
 	if(func == Func::move) {
-		os << "Not implemented" << std::endl;
+		cluster::EquivQuiverMatrix matrix(mat_str);
+		cluster::MoveGraph<cluster::EquivQuiverMatrix>
+			move(matrix, qvdraw::consts::Moves);
+		qvdraw::GraphPair pair = std::move(qvdraw::graph_factory::multi_graph(move));
+		qvdraw::NodeMap & map = pair.second;
+		ogdf::Graph & graph = pair.first;
+		ogdf::GraphAttributes attr(graph);
+		qvlayout::layout(graph, attr, 10, qvlayout::Method::Layered);
+
+		qv2tex::preamble(os);
+		qv2tex::begin(os);
+		qv2tex::draw_multi_graph(os, map, graph, attr);
+		qv2tex::end(os);
 	}
 	if(func == Func::graph) {
 		os << "Not implemented" << std::endl;
