@@ -64,7 +64,7 @@ void box_quiver(std::ostream & os,
 		const ogdf::GraphAttributes & attr) {
 	os << "\\newsavebox{\\" << name << "}" << os.widen('\n');
 	os << "\\sbox{\\" << name << "}{%" << os.widen('\n');
-	os << "\\scalebox{0.01}{\\framebox{%" << os.widen('\n');
+	os << "\\scalebox{0.05}{\\framebox{%" << os.widen('\n');
 	draw_quiver(os, graph, attr);
 	os << "}}}" << os.widen('\n');
 }
@@ -92,24 +92,17 @@ void draw_multi_graph(std::ostream & os,
 		qvlayout::layout(n_graph, n_attr);
 		box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr);
 	}
-	os << "\\begin{tikzpicture}[x=.1pt,y=.1pt]" << os.widen('\n');
+	os << "\\begin{tikzpicture}[x=.5pt,y=.5pt]" << os.widen('\n');
 	forall_nodes(node, graph) {
 		std::string name = "node" + int_to_str(node->index());
-//		os << "\\newlength{\\" << name << "h}" << os.widen('\n');
-//		os << "\\newlength{\\" << name << "w}" << os.widen('\n');
-//		os << "\\settoheight{\\" << name << "h}{\\usebox{\\" << name << "}}"
-//			<< os.widen('\n') << "\\settowidth{\\" << name << "w}{\\usebox{\\"
-//			<< name << "}}" << os.widen('\n');
-		os << "\\node" 
-//			"[minimum height=\\" << name <<"h,minimum width=\\" << name	<< "h]"
-"[inner sep=.2pt]"
+		os << "\\node[inner sep=1pt]"
 			" (n" << node->index() << ") at ("  << attr.x(node) << ","
 			<< attr.y(node) << "){\\usebox{\\node" << int_to_str(node->index()) << "}};"
 			<< os.widen('\n');
 	}
 	ogdf::edge e;
 	forall_edges(e, graph) {
-		os << "\\draw[line width=.01pt,blue](";
+		os << "\\draw[line width=.05pt,blue](";
 		os << "n" << e->source()->index() << ") -- (n" << e->target()->index()
 			<< ");" << os.widen('\n');
 	}
@@ -174,7 +167,7 @@ int main(int argc, char* argv[]) {
 		qvdraw::NodeMap & map = pair.second;
 		ogdf::Graph & graph = pair.first;
 		ogdf::GraphAttributes attr(graph);
-		qvlayout::layout(graph, attr, 10, qvlayout::Method::Layered);
+		qvlayout::layout(graph, attr, 10, qvlayout::Method::Energy);
 
 		qv2tex::preamble(os);
 		qv2tex::begin(os);

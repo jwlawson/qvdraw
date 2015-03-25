@@ -2,4 +2,8 @@ build/
 .ycm_extra_conf.pyc
 gmlayout
 qv2gml
+*.pdf
+qv2tex
+qvgraph2gml
+qvmove2gml
 
