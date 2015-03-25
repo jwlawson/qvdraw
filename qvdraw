@@ -16,12 +16,17 @@ if [ "$1" == "-n" ]; then
 	arrow=true
 	shift
 fi
+if [ "$1" == "-o" ]; then
+	shift
+	opt="$1"
+	shift
+fi
 
 function draw {
 	matrix="$@"
 	cmd="qv2gml -m \"${matrix}\" | gmlayout > tmp.gml"
 	eval $cmd
-	opt="-msg-level silent"
+	opt="$opt -msg-level silent"
 	if [ $arrow ]
 	then
 		opt="$opt -arrows none"

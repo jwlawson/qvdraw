@@ -5,7 +5,7 @@ Draws quivers from the matrix representation.
 ### Usage
 
 ```
-qvdraw [-nh] [filename]
+qvdraw [-nh] [-o "opts"] [filename]
 ```
 
 ##### Input
@@ -17,11 +17,15 @@ contains anything else then it could cause errors.
 If no filename is specified then the script assumes the input will be stdin.
 This allows other programs to pipe into `qvdraw`.
 
-The `-n` flag can be added if the direction of arrows in the quiver is not
-important. If this option is not specified then all arrows are directed, if
-`-n` is specified then the edges in the quiver will not be directed.
+* `-n` supresses the direction of arrows. If this option is not specified then
+	all arrows are directed, if `-n` is specified then the edges in the quiver
+	will not be directed.
 
-If the `-h` flag is specified, then a short usage description is printed.
+* `-h` show usage.
+
+* `-o "options"` passes any options to the `gml2pic` program. Examples include
+	`-width pixels` and `-pic filetype`. See the [gml2pic usage][gml2pic docs] docs to
+	see all options.
 
 ##### Output
 
@@ -77,5 +81,6 @@ The Makefile can be modified to include the install locations of these
 libraries, by changing the `INCLUDES` and `LFLAGS` variables.
 
 [gml2pic site]: http://www.ogdf.net/doku.php/project:gml2pic
+[gml2pic docs]: http://www.ogdf.net/doku.php/project:gml2pic-doc
 [OGDF site]: http://www.ogdf.net/ogdf.php
 [libqv site]: http://github.com/jwlawson/qv
