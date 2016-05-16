@@ -22,7 +22,7 @@
 
 #include <string>
 
-#include "qv/quiver_graph.h"
+#include "qv/exchange_graph.h"
 
 #include "consts.h"
 #include "graph_factory.h"
@@ -35,8 +35,9 @@ cluster::QuiverMatrix get_matrix(const std::string& matrix) {
 	return std::move(cluster::QuiverMatrix(matrix));
 }
 
-void output_gml(const cluster::QuiverGraph<cluster::EquivQuiverMatrix>& mat) {
-	qvdraw::GraphPair g = qvdraw::graph_factory::multi_graph(mat);
+void output_gml(const cluster::QuiverGraph& mat) {
+	typedef cluster::EquivQuiverMatrix M;
+	qvdraw::GraphPair<M> g = std::move(qvdraw::graph_factory::multi_graph<M>(mat));
 	g.first.writeGML(std::cout);
 }
 
@@ -64,7 +65,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 	typedef cluster::EquivQuiverMatrix Matrix;
-	typedef cluster::QuiverGraph<Matrix> Graph;
+	typedef cluster::QuiverGraph Graph;
 	Matrix mat = get_matrix(str);
 	Graph graph(mat);
 	output_gml(graph);

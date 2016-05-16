@@ -43,8 +43,7 @@ cluster::QuiverMatrix get_matrix(bool dynkin, const std::string& matrix) {
 }
 
 void output_gml(const cluster::QuiverMatrix& mat) {
-	ogdf::Graph g = qvdraw::graph_factory::graph(mat);
-	g.writeGML(std::cout);
+	qvdraw::graph_factory::graph(mat).second->writeGML(std::cout);
 }
 
 int main(int argc, char* argv[]) {

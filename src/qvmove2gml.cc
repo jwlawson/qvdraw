@@ -36,7 +36,8 @@ cluster::QuiverMatrix get_matrix(const std::string& matrix) {
 }
 
 void output_gml(const cluster::MoveGraph<cluster::EquivQuiverMatrix>& mat) {
-	qvdraw::GraphPair g = qvdraw::graph_factory::multi_graph(mat);
+	typedef cluster::EquivQuiverMatrix M;
+	qvdraw::GraphPair<M> g = qvdraw::graph_factory::multi_graph<M>(mat);
 	g.first.writeGML(std::cout);
 }
 

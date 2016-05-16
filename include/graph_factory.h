@@ -20,38 +20,46 @@
  */
 #pragma once
 
+#include <memory>
 #include <unordered_map>
 
 #include "ogdf/basic/Graph_d.h"
+#include "ogdf/basic/GraphAttributes.h"
 
 #include "qv/equiv_quiver_matrix.h"
+#include "qv/seed.h"
 
 namespace qvdraw {
-namespace graph_types {
-typedef cluster::EquivQuiverMatrix EQ;
-typedef EQ* EQPtr;
-typedef ogdf::node Node;
-struct PtrEqual {
-	bool operator()(EQPtr lhs, EQPtr rhs) const {
+template<class NodeType>
+struct NodeEquals {
+	bool operator()(const NodeType & lhs, const NodeType & rhs) const {
 		return lhs->equals(*rhs);
 	}
-	bool operator()(Node lhs, Node rhs) const {
+};
+template<class NodeType>
+struct NodeHash {
+	size_t operator()(const NodeType & node) const {
+		return node->hash();
+	}
+};
+struct ogdfnodeEquals {
+	bool operator()(const ogdf::node & lhs, const ogdf::node & rhs) const {
 		return lhs == rhs;
 	}
 };
-struct PtrHash {
-	size_t operator()(EQPtr ptr) const {
-		return ptr->hash();
-	}
-	bool operator()(Node ptr) const {
-		return ptr;
+struct ogdfnodeHash {
+	size_t operator()(const ogdf::node & node) const {
+		return (size_t)node;
 	}
 };
-}
-typedef std::unordered_map<graph_types::Node, graph_types::EQPtr> NodeMap;
-typedef std::unordered_map<graph_types::EQPtr, graph_types::Node,
-				graph_types::PtrHash, graph_types::PtrEqual> EQPtrMap;
-typedef std::pair<ogdf::Graph, NodeMap> GraphPair;
+template<class NodeType>
+using NodeMap = std::unordered_map<ogdf::node, NodeType*,
+			ogdfnodeHash, ogdfnodeEquals>;
+template<class NodeType>
+using ReverseNodeMap = std::unordered_map<NodeType*, ogdf::node,
+			NodeHash<NodeType*>, NodeEquals<NodeType*>>;
+template<class NodeType>
+using GraphPair = std::pair<ogdf::Graph, NodeMap<NodeType> >;
 namespace graph_factory{
 	/**
 	 * Construct an OGDF graph from the supplied IntMatrix representation of a
@@ -60,12 +68,20 @@ namespace graph_factory{
 	 * @param matrix Quiver to convert to graph
 	 * @return OGDF graph object
 	 */
-	ogdf::Graph graph(const cluster::IntMatrix& matrix);
+	std::pair<std::shared_ptr<ogdf::Graph>, std::shared_ptr<ogdf::GraphAttributes>>
+	graph(const cluster::IntMatrix & matrix);
+	/**
+	 * Construct an ogdf graph from the given seed. The cluster variables will be
+	 * assigned to labels on the nodes of the graph.
+	 */
+	template<class M>
+	std::pair<std::shared_ptr<ogdf::Graph>, std::shared_ptr<ogdf::GraphAttributes>>
+	graph(const cluster::__Seed<M> & seed);
 	/**
 	 * Construct an OGDF graph consisting of the relations between quivers.
 	 */
-	template<class G>
-	GraphPair multi_graph(const G & graph);
+	template<class NodeType, class G>
+	GraphPair<NodeType> multi_graph(const G & graph);
 }	
 }
 
