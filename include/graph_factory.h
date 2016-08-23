@@ -81,7 +81,8 @@ namespace graph_factory{
 	 * Construct an OGDF graph consisting of the relations between quivers.
 	 */
 	template<class NodeType, class G>
-	GraphPair<NodeType> multi_graph(const G & graph);
+	GraphPair<NodeType>
+	multi_graph(const G & graph);
 }	
 }
 

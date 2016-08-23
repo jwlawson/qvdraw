@@ -44,7 +44,6 @@ default_cluster(size_t size) {
 }
 }
 namespace qv2tex {
-
 void preamble(std::ostream & os) {
 	os << "\\documentclass{standalone}" << os.widen('\n');
 	os << "\\usepackage{tkz-euclide}" << os.widen('\n');
@@ -52,27 +51,29 @@ void preamble(std::ostream & os) {
 	os << "\\tikzstyle{every picture}+=[>=stealth']" << os.widen('\n');
 }
 void begin(std::ostream & os) {
-	os << "\\def\\qvsize{0.7pt}"<< os.widen('\n');
+	os << "\\def\\qvsize{1pt}"<< os.widen('\n');
 	os << "\\def\\qvscale{0.05}"<< os.widen('\n');
-	os << "\\def\\grsize{0.7pt}"<< os.widen('\n');
-	os << "\\def\\grscale{2}"<< os.widen('\n');
-	os << "\\begin{document}" << os.widen('\n');
+	os << "\\def\\grsize{0.5pt}"<< os.widen('\n');
+	os << "\\def\\grscale{1}"<< os.widen('\n');
+	os << "\\def\\picscale{1}"<< os.widen('\n');
+	os << "\\begin{document}%" << os.widen('\n');
 }
 void end(std::ostream & os) {
-	os << "\\end{document}" << os.widen('\n');
+	os << "\\end{document}%" << os.widen('\n');
 }
 void draw_quiver(std::ostream & os,
 		const ogdf::Graph & graph,
-		const ogdf::GraphAttributes & attr) {
+		const ogdf::GraphAttributes & attr,
+		const char * color = "black") {
 	ogdf::node n;
 	os << "\\begin{tikzpicture}[x=\\qvsize,y=\\qvsize]" << os.widen('\n');
 	forall_nodes(n, graph) {
 		os << "\\tkzDefPoint(" << attr.x(n) << "," << attr.y(n) << "){n";
-		os << n->index() << "}" << os.widen('\n');
+		os << n->index() << "}%" << os.widen('\n');
 	}
 	ogdf::edge e;
 	forall_edges(e, graph) {
-		os << "\\draw[->,shorten <=5,shorten >=5] (n" << e->source()->index() << ") -- (n";
+		os << "\\draw[->,shorten <=5,shorten >=5," << color << "] (n" << e->source()->index() << ") -- (n";
 		os << e->target()->index() << ")";
 		if(attr.labelEdge(e).length() > 0) {
 			os << "node[midway,above,sloped] {$"
@@ -80,7 +81,7 @@ void draw_quiver(std::ostream & os,
 		}
 		os << ";" << os.widen('\n');
 	}
-	os << "\\tkzDrawPoints(";
+	os << "\\tkzDrawPoints[color=" << color << "](";
 	forall_nodes(n,graph) {
 		os << "n" << n->index();
 		if(n->succ()) {
@@ -90,21 +91,24 @@ void draw_quiver(std::ostream & os,
 	os << ");" << os.widen('\n');
 	forall_nodes(n, graph) {
 		if(attr.labelNode(n).length() > 0) {
-			os << "\\tkzLabelPoint(n" << n->index() << "){$" << attr.labelNode(n);
-			os << "$}" << os.widen('\n');
+			os << "\\tkzLabelPoint[color=" << color << "](n" << n->index() << "){$" << attr.labelNode(n);
+			os << "$}%" << os.widen('\n');
 		}
 	}
-	os << "\\end{tikzpicture}" << os.widen('\n');
+	os << "\\draw[" << color << "](current bounding box.south west)rectangle"
+		"(current bounding box.north east);" << os.widen('\n');
+	os << "\\end{tikzpicture}%" << os.widen('\n');
 }
 void box_quiver(std::ostream & os,
 		const std::string & name,
 		const ogdf::Graph & graph,
-		const ogdf::GraphAttributes & attr) {
-	os << "\\newsavebox{\\" << name << "}" << os.widen('\n');
+		const ogdf::GraphAttributes & attr,
+		const char * color = "black") {
+	os << "\\newsavebox{\\" << name << "}%" << os.widen('\n');
 	os << "\\sbox{\\" << name << "}{%" << os.widen('\n');
-	os << "\\scalebox{\\qvscale}{\\framebox{%" << os.widen('\n');
-	draw_quiver(os, graph, attr);
-	os << "}}}" << os.widen('\n');
+	os << "\\scalebox{\\qvscale}{%" << os.widen('\n');
+	draw_quiver(os, graph, attr, color);
+	os << "}}%" << os.widen('\n');
 }
 std::string int_to_str(int a) {
 	char lookup[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'k', 'i', 'j'};
@@ -122,45 +126,77 @@ template<class M>
 void draw_multi_graph(std::ostream & os,
 		const qvdraw::NodeMap<M> & map,
 		const ogdf::Graph & graph,
-		const ogdf::GraphAttributes & attr) {
+		const ogdf::GraphAttributes & attr,
+		const bool green) {
 	ogdf::node node;
+	uint64_t max_x = 0;
+	uint64_t max_y = 0;
+	uint64_t min_x = INT_MAX;
+	uint64_t min_y = INT_MAX;
+	std::vector<ogdf::node> nodes_to_remove;
+	cluster::_EGContinueChecks::InfiniteTypeSink chk;
 	forall_nodes(node, graph) {
+		if(attr.x(node) > max_x) max_x = attr.x(node);
+		if(attr.y(node) > max_y) max_y = attr.y(node);
+		if(attr.x(node) < min_x) min_x = attr.x(node);
+		if(attr.y(node) < min_y) min_y = attr.y(node);
 		auto found = map.find(node);
 		if(found != map.end()) {
 			const M* mat = found->second;
-			std::pair<std::shared_ptr<ogdf::Graph>, std::shared_ptr<ogdf::GraphAttributes>> pair = qvdraw::graph_factory::graph(*mat);
+			std::pair<std::shared_ptr<ogdf::Graph>,
+				std::shared_ptr<ogdf::GraphAttributes>> pair =
+					qvdraw::graph_factory::graph(*mat);
 			ogdf::Graph & n_graph = *pair.first;
 			ogdf::GraphAttributes & n_attr = *pair.second;
 			qvlayout::layout(n_graph, n_attr);
-			box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr);
+			if(green) {
+				if(chk(mat, 0)) {
+					box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr, "blue");
+				} else {
+					box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr, "red");
+				}
+			} else {
+				box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr);
+			}
 		} else {
 			/* Node is not a quiver/seed.
 			 * This happens when the graph is not completely contstructed e.g. in the
 			 * case where the exchange graph would otherwise be infinite. */
-			ogdf::Graph n_graph;
-			ogdf::GraphAttributes n_attr(n_graph);
-			box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr);
+			nodes_to_remove.push_back(node);
 		}
 	}
+	os << "\\scalebox{\\picscale}{%" << os.widen('\n');
 	os << "\\begin{tikzpicture}[x=\\grsize,y=\\grsize,scale=\\grscale]" << os.widen('\n');
+	os << "\\path[use as bounding box] (" << min_x << "," << min_y << ")rectangle("
+		<< max_x << "," << max_y << ");" << os.widen('\n');
 	forall_nodes(node, graph) {
+		if(std::find(nodes_to_remove.begin(), nodes_to_remove.end(), node) != nodes_to_remove.end()) {
+			continue;
+		}
 		std::string name = "node" + int_to_str(node->index());
-		os << "\\node[inner sep=1pt]"
+		os << "\\node[inner sep=0pt,outer sep=0pt]"
 			" (n" << node->index() << ") at ("  << attr.x(node) << ","
 			<< attr.y(node) << "){\\usebox{\\node" << int_to_str(node->index()) << "}};"
 			<< os.widen('\n');
 	}
 	ogdf::edge e;
 	forall_edges(e, graph) {
-		os << "\\draw[line width=.05pt,blue](";
+		if(std::find_if(nodes_to_remove.begin(), nodes_to_remove.end(), [&e](ogdf::node node)->bool{return (e->source()->index() == node->index()) || (e->target()->index() == node->index());}) != nodes_to_remove.end()) {
+			continue;
+		}
+		os << "\\draw[line width=.05pt";
+		if(green && chk(map.find(e->source())->second, 0) && chk(map.find(e->target())->second, 0)) {
+			os << "," << "blue";
+		}
+		os << "](";
 		os << "n" << e->source()->index() << ") -- (n" << e->target()->index()
 			<< ");" << os.widen('\n');
 	}
-	os << "\\end{tikzpicture}" << os.widen('\n');
+	os << "\\end{tikzpicture}}%" << os.widen('\n');
 }
 template<class M, class Graph>
 void 
-output_multi_graph(const Graph & multi_gr, std::ostream & os) {
+output_multi_graph(const Graph & multi_gr, std::ostream & os, bool green = false) {
 	/* 
 	 * NB: The std::move here is important. Otherwise the graph ends up being
 	 * copied for some stupid reason. Then the nodes in the graph are different
@@ -174,7 +210,7 @@ output_multi_graph(const Graph & multi_gr, std::ostream & os) {
 
 	qv2tex::preamble(os);
 	qv2tex::begin(os);
-	qv2tex::draw_multi_graph(os, map, graph, attr);
+	qv2tex::draw_multi_graph(os, map, graph, attr, green);
 	qv2tex::end(os);
 }
 }
@@ -187,16 +223,18 @@ void usage() {
 	std::cout << "   -e Draw the exchange graph of a quiver with cluster (x1 ... )" << std::endl;
 	std::cout << "   -l Draw the labelled exchange/quiver graph" << std::endl;
 	std::cout << "   -n Limit the number of seeds computed to given number" << std::endl;
+	std::cout << "   -r Don't compute mutations which do not lead to green sequences" << std::endl;
 }
 enum Func { quiver, move, graph, exchange, unset };
 int main(int argc, char* argv[]) {
 	Func func = unset;
 	bool labelled = false;
+	bool green = false;
 	std::string mat_str;
 	size_t limit = SIZE_MAX;
 	int c;
 
-	while((c = getopt(argc, argv, "q:m:g:e:ln:")) != -1) {
+	while((c = getopt(argc, argv, "q:m:g:e:ln:r")) != -1) {
 		switch(c) {
 			case 'q':
 				func = Func::quiver;
@@ -219,6 +257,9 @@ int main(int argc, char* argv[]) {
 				break;
 			case 'n':
 				limit = std::stoul(optarg);
+				break;
+			case 'r':
+				green = true;
 				break;
 			case '?':
 				usage();
@@ -253,30 +294,50 @@ int main(int argc, char* argv[]) {
 	else if(labelled && func == Func::graph) {
 		typedef cluster::QuiverMatrix M;
 		M matrix(mat_str);
-		cluster::LabelledQuiverGraph move(matrix, limit);
-		qv2tex::output_multi_graph<M>(move, os);
+		if(green) {
+			cluster::GreenLabelledQuiverGraph move(matrix, limit);
+			qv2tex::output_multi_graph<M>(move, os, true);
+		} else {
+			cluster::LabelledQuiverGraph move(matrix, limit);
+			qv2tex::output_multi_graph<M>(move, os);
+		}
 	}
 	else if(func == Func::graph) {
 		typedef cluster::EquivQuiverMatrix M;
 		M matrix(mat_str);
-		cluster::QuiverGraph move(matrix, limit);
-		qv2tex::output_multi_graph<M>(move, os);
+		if(green) {
+			cluster::GreenQuiverGraph move(matrix, limit);
+			qv2tex::output_multi_graph<M>(move, os, true);
+		} else {
+			cluster::QuiverGraph move(matrix, limit);
+			qv2tex::output_multi_graph<M>(move, os);
+		}
 	}
 	else if(labelled && func == Func::exchange) {
 		typedef cluster::LabelledSeed M;
 		cluster::QuiverMatrix matrix(mat_str);
 		M::Cluster cluster = default_cluster(matrix.num_rows());
 		M seed(matrix, cluster);
-		cluster::LabelledExchangeGraph move(seed, limit);
-		qv2tex::output_multi_graph<M>(move, os);
+		if(green) {
+			cluster::LabelledExchangeGraph move(seed, limit);
+			qv2tex::output_multi_graph<M>(move, os, true);
+		} else {
+			cluster::LabelledExchangeGraph move(seed, limit);
+			qv2tex::output_multi_graph<M>(move, os);
+		}
 	}
 	else if(func == Func::exchange) {
 		typedef cluster::Seed M;
 		cluster::QuiverMatrix matrix(mat_str);
 		M::Cluster cluster = default_cluster(matrix.num_rows());
 		M seed(matrix, cluster);
-		cluster::ExchangeGraph move(seed, limit);
-		qv2tex::output_multi_graph<M>(move, os);
+		if(green) {
+			cluster::ExchangeGraph move(seed, limit);
+			qv2tex::output_multi_graph<M>(move, os, true);
+		} else {
+			cluster::ExchangeGraph move(seed, limit);
+			qv2tex::output_multi_graph<M>(move, os);
+		}
 	}
 	return 0;
 }

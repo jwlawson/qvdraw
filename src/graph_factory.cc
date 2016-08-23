@@ -175,6 +175,18 @@ template
 GraphPair<cluster::LabelledSeed>
 multi_graph(const cluster::LabelledExchangeGraph &);
 template
+GraphPair<cluster::QuiverMatrix>
+multi_graph(const cluster::GreenLabelledQuiverGraph &);
+template
+GraphPair<cluster::EquivQuiverMatrix>
+multi_graph(const cluster::GreenQuiverGraph &);
+template
+GraphPair<cluster::Seed>
+multi_graph(const cluster::GreenExchangeGraph &);
+template
+GraphPair<cluster::LabelledSeed>
+multi_graph(const cluster::GreenLabelledExchangeGraph &);
+template
 std::pair<std::shared_ptr<ogdf::Graph>, std::shared_ptr<ogdf::GraphAttributes>>
 graph(const cluster::Seed &);
 template
