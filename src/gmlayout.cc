@@ -53,12 +53,14 @@ int main(int argc, char* argv[]) {
 
 	Graph G;
 	GraphA GA(G);
+	GA.initAttributes(ogdf::GraphAttributes::edgeLabel);
+	GA.initAttributes(ogdf::GraphAttributes::nodeLabel);
 	if(str.empty()) {
-		if(!G.readGML(std::cin)) {
+		if(!GA.readGML(G, std::cin)) {
 			std::cerr << "Error reading GML from stdin" << std::endl;
 		}
 	} else {
-		if(!G.readGML(str.data())) {
+		if(!GA.readGML(G, str.data())) {
 			std::cerr << "Could not load " << str << std::endl;
 			return 1;
 		}
