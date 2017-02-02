@@ -21,12 +21,15 @@
  */
 #include "graph_factory.h"
 
+#include <iostream>
 #include <sstream>
 #include <vector>
-#include <iostream>
+
+#include <ginac/ginac.h>
 
 #include "qv/move_graph.h"
-#include "qv/exchange_graph.h"
+#include "qv/template_exchange_graph.h"
+#include "qv/green_exchange_graph.h"
 
 namespace qvdraw {
 namespace graph_factory {
@@ -34,7 +37,7 @@ namespace {
 const size_t MAX_EQ_LENGTH = 100;
 template<class K>
 ogdf::node
-get_node(ogdf::Graph& res, K* mat, ReverseNodeMap<K>& map) {
+get_node(ogdf::Graph& res, K * const mat, ReverseNodeMap<K>& map) {
 	if(mat == nullptr) {
 		return res.newNode();
 	}
@@ -156,35 +159,35 @@ GraphPair<NodeType> multi_graph(const G & g) {
 		}
 	}
 	NodeMap<NodeType> map_result = switch_map(map);
-	return std::move(std::make_pair(std::move(result),std::move(map_result)));
+	return std::make_pair(std::move(result),std::move(map_result));
 }
 template
-GraphPair<cluster::EquivQuiverMatrix>
-multi_graph<cluster::EquivQuiverMatrix>(
+GraphPair<const cluster::EquivQuiverMatrix>
+multi_graph<const cluster::EquivQuiverMatrix>(
 		const cluster::MoveGraph<cluster::EquivQuiverMatrix> &);
 template
-GraphPair<cluster::QuiverMatrix>
+GraphPair<const cluster::QuiverMatrix>
 multi_graph(const cluster::LabelledQuiverGraph &);
 template
-GraphPair<cluster::EquivQuiverMatrix>
+GraphPair<const cluster::EquivQuiverMatrix>
 multi_graph(const cluster::QuiverGraph &);
 template
-GraphPair<cluster::Seed>
+GraphPair<const cluster::Seed>
 multi_graph(const cluster::ExchangeGraph &);
 template
-GraphPair<cluster::LabelledSeed>
+GraphPair<const cluster::LabelledSeed>
 multi_graph(const cluster::LabelledExchangeGraph &);
 template
-GraphPair<cluster::QuiverMatrix>
+GraphPair<const cluster::QuiverMatrix>
 multi_graph(const cluster::GreenLabelledQuiverGraph &);
 template
-GraphPair<cluster::EquivQuiverMatrix>
+GraphPair<const cluster::EquivQuiverMatrix>
 multi_graph(const cluster::GreenQuiverGraph &);
 template
-GraphPair<cluster::Seed>
+GraphPair<const cluster::Seed>
 multi_graph(const cluster::GreenExchangeGraph &);
 template
-GraphPair<cluster::LabelledSeed>
+GraphPair<const cluster::LabelledSeed>
 multi_graph(const cluster::GreenLabelledExchangeGraph &);
 template
 std::pair<std::shared_ptr<ogdf::Graph>, std::shared_ptr<ogdf::GraphAttributes>>

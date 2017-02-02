@@ -32,11 +32,11 @@ void usage() {
 }
 
 cluster::QuiverMatrix get_matrix(const std::string& matrix) {
-	return std::move(cluster::QuiverMatrix(matrix));
+	return cluster::QuiverMatrix(matrix);
 }
 
 void output_gml(const cluster::MoveGraph<cluster::EquivQuiverMatrix>& mat) {
-	typedef cluster::EquivQuiverMatrix M;
+	typedef const cluster::EquivQuiverMatrix M;
 	qvdraw::GraphPair<M> g = qvdraw::graph_factory::multi_graph<M>(mat);
 	g.first.writeGML(std::cout);
 }

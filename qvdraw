@@ -33,6 +33,7 @@ function draw {
 	fi
 	dcmd="gml2pic $opt -o ${count}.png tmp.gml > /dev/null"
 	eval $dcmd
+	#convert ${count}.png -quality 90 -colors 16 -depth 4 ${count}.png
 	rm -f tmp.gml
 	count=$((count+1))
 }
