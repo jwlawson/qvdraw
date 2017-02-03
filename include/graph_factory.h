@@ -29,60 +29,60 @@
 #include "qv/equiv_quiver_matrix.h"
 #include "qv/seed.h"
 
+#include "qvrefl/cartan_exchange_graph.h"
+
 namespace qvdraw {
-template<class NodeType>
+template <class NodeType>
 struct NodeEquals {
-	bool operator()(const NodeType & lhs, const NodeType & rhs) const {
-		return lhs->equals(*rhs);
-	}
+  bool operator()(const NodeType& lhs, const NodeType& rhs) const;
 };
-template<class NodeType>
+template <class NodeType>
 struct NodeHash {
-	size_t operator()(const NodeType & node) const {
-		return node->hash();
-	}
+  size_t operator()(const NodeType& node) const;
 };
 struct ogdfnodeEquals {
-	bool operator()(const ogdf::node & lhs, const ogdf::node & rhs) const {
-		return lhs == rhs;
-	}
+  bool operator()(const ogdf::node& lhs, const ogdf::node& rhs) const;
 };
 struct ogdfnodeHash {
-	size_t operator()(const ogdf::node & node) const {
-		return (size_t)node;
-	}
+  size_t operator()(const ogdf::node& node) const;
 };
-template<class NodeType>
-using NodeMap = std::unordered_map<ogdf::node, NodeType*,
-			ogdfnodeHash, ogdfnodeEquals>;
-template<class NodeType>
-using ReverseNodeMap = std::unordered_map<NodeType*, ogdf::node,
-			NodeHash<NodeType*>, NodeEquals<NodeType*>>;
-template<class NodeType>
-using GraphPair = std::pair<ogdf::Graph, NodeMap<NodeType> >;
-namespace graph_factory{
-	/**
-	 * Construct an OGDF graph from the supplied IntMatrix representation of a
-	 * quiver. Each row/column corresponds to a vertex in the graph and each
-	 * entry a_i,j to edges i -> j.
-	 * @param matrix Quiver to convert to graph
-	 * @return OGDF graph object
-	 */
-	std::pair<std::shared_ptr<ogdf::Graph>, std::shared_ptr<ogdf::GraphAttributes>>
-	graph(const cluster::IntMatrix & matrix);
-	/**
-	 * Construct an ogdf graph from the given seed. The cluster variables will be
-	 * assigned to labels on the nodes of the graph.
-	 */
-	template<class M>
-	std::pair<std::shared_ptr<ogdf::Graph>, std::shared_ptr<ogdf::GraphAttributes>>
-	graph(const cluster::__Seed<M> & seed);
-	/**
-	 * Construct an OGDF graph consisting of the relations between quivers.
-	 */
-	template<class NodeType, class G>
-	GraphPair<NodeType>
-	multi_graph(const G & graph);
-}	
+template <class NodeType>
+using NodeMap =
+    std::unordered_map<ogdf::node, NodeType*, ogdfnodeHash, ogdfnodeEquals>;
+template <class NodeType>
+using ReverseNodeMap = std::unordered_map<NodeType*,
+                                          ogdf::node,
+                                          NodeHash<NodeType*>,
+                                          NodeEquals<NodeType*>>;
+template <class NodeType>
+using GraphPair = std::pair<ogdf::Graph, NodeMap<NodeType>>;
+namespace graph_factory {
+/**
+ * Construct an OGDF graph from the supplied IntMatrix representation of a
+ * quiver. Each row/column corresponds to a vertex in the graph and each
+ * entry a_i,j to edges i -> j.
+ * @param matrix Quiver to convert to graph
+ * @return OGDF graph object
+ */
+std::pair<std::shared_ptr<ogdf::Graph>, std::shared_ptr<ogdf::GraphAttributes>>
+graph(const cluster::IntMatrix& matrix);
+/**
+ * Construct an ogdf graph from the given seed. The cluster variables will be
+ * assigned to labels on the nodes of the graph.
+ */
+template <class M>
+std::pair<std::shared_ptr<ogdf::Graph>, std::shared_ptr<ogdf::GraphAttributes>>
+graph(const cluster::__Seed<M>& seed);
+/**
+ * Construct a graph from the CartanQuiver. Edges are labelled with '-' if the
+ * corresponding cartan entry is negative.
+ */
+std::pair<std::shared_ptr<ogdf::Graph>, std::shared_ptr<ogdf::GraphAttributes>>
+graph(const refl::cartan_exchange::CartanQuiver& seed);
+/**
+ * Construct an OGDF graph consisting of the relations between quivers.
+ */
+template <class NodeType, class G>
+GraphPair<NodeType> multi_graph(const G& graph);
 }
-
+}
