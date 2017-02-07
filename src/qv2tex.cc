@@ -132,21 +132,9 @@ void draw_multi_graph(std::ostream& os,
 		      const ogdf::Graph& graph,
 		      const ogdf::GraphAttributes& attr) {
   ogdf::node node;
-  uint64_t max_x = 0;
-  uint64_t max_y = 0;
-  uint64_t min_x = INT_MAX;
-  uint64_t min_y = INT_MAX;
   std::vector<ogdf::node> nodes_to_remove;
   cluster::green_exchange::MultiArrowTriangleCheck chk;
   forall_nodes(node, graph) {
-    if (attr.x(node) > max_x)
-      max_x = attr.x(node);
-    if (attr.y(node) > max_y)
-      max_y = attr.y(node);
-    if (attr.x(node) < min_x)
-      min_x = attr.x(node);
-    if (attr.y(node) < min_y)
-      min_y = attr.y(node);
     auto found = map.find(node);
     if (found != map.end()) {
       const M* mat = found->second;
@@ -167,10 +155,6 @@ void draw_multi_graph(std::ostream& os,
   os << "\\scalebox{\\picscale}{%" << os.widen('\n');
   os << "\\begin{tikzpicture}[x=\\grsize,y=\\grsize,scale=\\grscale]"
      << os.widen('\n');
-  constexpr int padding = 15;
-  os << "\\path[use as bounding box] (" << min_x - padding << ","
-     << min_y - padding << ")rectangle(" << max_x + padding << ","
-     << max_y + padding << ");" << os.widen('\n');
   forall_nodes(node, graph) {
     if (std::find(nodes_to_remove.begin(), nodes_to_remove.end(), node) !=
 	nodes_to_remove.end()) {
@@ -204,21 +188,9 @@ void draw_green_multi_graph(std::ostream& os,
 			    const ogdf::Graph& graph,
 			    const ogdf::GraphAttributes& attr) {
   ogdf::node node;
-  uint64_t max_x = 0;
-  uint64_t max_y = 0;
-  uint64_t min_x = INT_MAX;
-  uint64_t min_y = INT_MAX;
   std::vector<ogdf::node> nodes_to_remove;
   cluster::green_exchange::MultiArrowTriangleCheck chk;
   forall_nodes(node, graph) {
-    if (attr.x(node) > max_x)
-      max_x = attr.x(node);
-    if (attr.y(node) > max_y)
-      max_y = attr.y(node);
-    if (attr.x(node) < min_x)
-      min_x = attr.x(node);
-    if (attr.y(node) < min_y)
-      min_y = attr.y(node);
     auto found = map.find(node);
     if (found != map.end()) {
       const M* mat = found->second;
@@ -245,10 +217,6 @@ void draw_green_multi_graph(std::ostream& os,
   os << "\\scalebox{\\picscale}{%" << os.widen('\n');
   os << "\\begin{tikzpicture}[x=\\grsize,y=\\grsize,scale=\\grscale]"
      << os.widen('\n');
-  constexpr int padding = 15;
-  os << "\\path[use as bounding box] (" << min_x - padding << ","
-     << min_y - padding << ")rectangle(" << max_x + padding << ","
-     << max_y + padding << ");" << os.widen('\n');
   forall_nodes(node, graph) {
     if (std::find(nodes_to_remove.begin(), nodes_to_remove.end(), node) !=
 	nodes_to_remove.end()) {
