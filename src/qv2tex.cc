@@ -133,7 +133,6 @@ void draw_multi_graph(std::ostream& os,
 		      const ogdf::GraphAttributes& attr) {
   ogdf::node node;
   std::vector<ogdf::node> nodes_to_remove;
-  cluster::green_exchange::MultiArrowTriangleCheck chk;
   forall_nodes(node, graph) {
     auto found = map.find(node);
     if (found != map.end()) {

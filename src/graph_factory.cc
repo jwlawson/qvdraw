@@ -174,7 +174,7 @@ GraphPair<NodeType> multi_graph(const G& g) {
     }
   }
   NodeMap<NodeType> map_result = switch_map(map);
-  return std::make_pair(std::move(result), std::move(map_result));
+  return {result, map_result};
 }
 template GraphPair<const cluster::EquivQuiverMatrix>
 multi_graph<const cluster::EquivQuiverMatrix>(

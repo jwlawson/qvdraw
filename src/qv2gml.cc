@@ -39,7 +39,7 @@ cluster::QuiverMatrix get_matrix(bool dynkin, const std::string& matrix) {
 	if(dynkin) {
 		return cluster::dynkin::MAP.at(matrix);
 	}
-	return std::move(cluster::QuiverMatrix(matrix));
+	return cluster::QuiverMatrix(matrix);
 }
 
 void output_gml(const cluster::QuiverMatrix& mat) {

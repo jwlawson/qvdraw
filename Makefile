@@ -1,7 +1,22 @@
-CXXFLAGS = -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter
-CXXFLAGS += -std=c++1z -march=native -Wno-misleading-indentation
-CXXFLAGS += -DUSE_COIN -DCOIN_OSI_CLP -DOGDF_DLL -DQV_USE_GINAC
-OPT = -g -O3
+ifeq ($(CXX),icpc)
+CXXFLAGS = -Wall -xHOST
+OPT = -O3 -ipo -no-prec-div
+AR = xiar
+endif
+ifeq ($(CXX),clang++)
+CXXFLAGS += -Wall -Wextra -Werror -march=native -Wno-unused-parameter\
+						-Wno-overloaded-virtual -Wno-unused-variable -Wno-infinite-recursion
+OPT = -g -Ofast
+AR = ar
+endif
+ifeq ($(CXX),g++)
+CXXFLAGS += -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter\
+	-march=native -Wno-misleading-indentation
+OPT = -g -Ofast
+AR = gcc-ar
+endif
+override CXXFLAGS += -std=c++1z
+override CXXFLAGS += -DUSE_COIN -DCOIN_OSI_CLP -DOGDF_DLL -DQV_USE_GINAC
 
 # Specify base directory
 BASE_DIR = .
