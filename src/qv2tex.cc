@@ -114,6 +114,52 @@ void box_quiver(std::ostream& os,
   draw_quiver(os, graph, attr, color);
   os << "}}%" << os.widen('\n');
 }
+namespace colouring {
+template <class Seed>
+struct GreenSeqExistence {
+  const char* vertex_colour(Seed const* vertex) const {
+    if (chk(vertex, 0)) {
+      return "blue";
+    } else {
+      return "red";
+    }
+  }
+  const char* edge_colour(Seed const* source, Seed const* dest) const {
+    if (chk(source, 0) && chk(dest, 0)) {
+      return "blue";
+    } else {
+      return "red";
+    }
+  }
+
+ private:
+  cluster::green_exchange::MultiArrowTriangleCheck chk;
+};
+struct AllBlack {
+  const char* vertex_colour(void const* /* ignored */) const { return "black"; }
+  const char* edge_colour(void const* /* ignored */,
+                          void const* /* ignored */) const {
+    return "black";
+  }
+};
+struct FullyCompatible {
+  typedef refl::cartan_exchange::CartanQuiver Quiver;
+  const char* vertex_colour(Quiver const* quiv) const {
+    if (quiv->fully_compatible) {
+      return "black";
+    } else {
+      return "red";
+    }
+  }
+  const char* edge_colour(Quiver const* source, Quiver const* dest) const {
+    if (source->fully_compatible && dest->fully_compatible) {
+      return "black";
+    } else {
+      return "red";
+    }
+  }
+};
+}
 std::string int_to_str(int a) {
   char lookup[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'k', 'i', 'j'};
   std::string result;
@@ -126,11 +172,12 @@ std::string int_to_str(int a) {
   }
   return result;
 }
-template <class M>
+template <class M, class Colour>
 void draw_multi_graph(std::ostream& os,
                       const qvdraw::NodeMap<M>& map,
                       const ogdf::Graph& graph,
                       const ogdf::GraphAttributes& attr) {
+  static Colour colouring;
   ogdf::node node;
   std::vector<ogdf::node> nodes_to_remove;
   forall_nodes(node, graph) {
@@ -143,7 +190,8 @@ void draw_multi_graph(std::ostream& os,
       ogdf::Graph& n_graph = *pair.first;
       ogdf::GraphAttributes& n_attr = *pair.second;
       qvlayout::layout(n_graph, n_attr);
-      box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr);
+      box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr,
+                 colouring.vertex_colour(mat));
     } else {
       /* Node is not a quiver/seed.
        * This happens when the graph is not completely contstructed e.g. in the
@@ -175,98 +223,15 @@ void draw_multi_graph(std::ostream& os,
                      }) != nodes_to_remove.end()) {
       continue;
     }
-    os << "\\draw[line width=.05pt";
+    os << "\\draw[line width=.05pt,";
+    os << colouring.edge_colour(map.find(e->source())->second,
+                                map.find(e->target())->second);
     os << "](n" << e->source()->index() << ") -- (n" << e->target()->index()
        << ");" << os.widen('\n');
   }
   os << "\\end{tikzpicture}}%" << os.widen('\n');
 }
-template <class M>
-void draw_green_multi_graph(std::ostream& os,
-                            const qvdraw::NodeMap<M>& map,
-                            const ogdf::Graph& graph,
-                            const ogdf::GraphAttributes& attr) {
-  ogdf::node node;
-  std::vector<ogdf::node> nodes_to_remove;
-  cluster::green_exchange::MultiArrowTriangleCheck chk;
-  forall_nodes(node, graph) {
-    auto found = map.find(node);
-    if (found != map.end()) {
-      const M* mat = found->second;
-      std::pair<std::shared_ptr<ogdf::Graph>,
-                std::shared_ptr<ogdf::GraphAttributes>>
-          pair = qvdraw::graph_factory::graph(*mat);
-      ogdf::Graph& n_graph = *pair.first;
-      ogdf::GraphAttributes& n_attr = *pair.second;
-      qvlayout::layout(n_graph, n_attr);
-      if (chk(mat, 0)) {
-        box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr,
-                   "blue");
-      } else {
-        box_quiver(os, "node" + int_to_str(node->index()), n_graph, n_attr,
-                   "red");
-      }
-    } else {
-      /* Node is not a quiver/seed.
-       * This happens when the graph is not completely contstructed e.g. in the
-       * case where the exchange graph would otherwise be infinite. */
-      nodes_to_remove.push_back(node);
-    }
-  }
-  os << "\\scalebox{\\picscale}{%" << os.widen('\n');
-  os << "\\begin{tikzpicture}[x=\\grsize,y=\\grsize,scale=\\grscale]"
-     << os.widen('\n');
-  forall_nodes(node, graph) {
-    if (std::find(nodes_to_remove.begin(), nodes_to_remove.end(), node) !=
-        nodes_to_remove.end()) {
-      continue;
-    }
-    std::string name = "node" + int_to_str(node->index());
-    os << "\\node[inner sep=0pt,outer sep=0pt]"
-          " (n"
-       << node->index() << ") at (" << attr.x(node) << "," << attr.y(node)
-       << "){\\usebox{\\node" << int_to_str(node->index()) << "}};"
-       << os.widen('\n');
-  }
-  ogdf::edge e;
-  forall_edges(e, graph) {
-    if (std::find_if(nodes_to_remove.begin(), nodes_to_remove.end(),
-                     [&e](ogdf::node node) -> bool {
-                       return (e->source()->index() == node->index()) ||
-                              (e->target()->index() == node->index());
-                     }) != nodes_to_remove.end()) {
-      continue;
-    }
-    os << "\\draw[line width=.05pt";
-    if (chk(map.find(e->source())->second, 0) &&
-        chk(map.find(e->target())->second, 0)) {
-      os << ",blue";
-    }
-    os << "](n" << e->source()->index() << ") -- (n" << e->target()->index()
-       << ");" << os.widen('\n');
-  }
-  os << "\\end{tikzpicture}}%" << os.widen('\n');
-}
-template <class M, class Graph>
-void output_green_multi_graph(const Graph& multi_gr, std::ostream& os) {
-  /*
-   * NB: The std::move here is important. Otherwise the graph ends up being
-   * copied for some stupid reason. Then the nodes in the graph are different
-   * to the nodes in the map.
-   */
-  qvdraw::GraphPair<M> pair =
-      std::move(qvdraw::graph_factory::multi_graph<M>(multi_gr));
-  qvdraw::NodeMap<M>& map = pair.second;
-  ogdf::Graph& graph = pair.first;
-  ogdf::GraphAttributes attr(graph);
-  qvlayout::layout(graph, attr, 10, qvlayout::Method::Energy);
-
-  qv2tex::preamble(os);
-  qv2tex::begin(os);
-  qv2tex::draw_green_multi_graph(os, map, graph, attr);
-  qv2tex::end(os);
-}
-template <class M, class Graph>
+template <class M, class Colouring, class Graph>
 void output_multi_graph(const Graph& multi_gr, std::ostream& os) {
   /*
    * NB: The std::move here is important. Otherwise the graph ends up being
@@ -282,7 +247,7 @@ void output_multi_graph(const Graph& multi_gr, std::ostream& os) {
 
   qv2tex::preamble(os);
   qv2tex::begin(os);
-  qv2tex::draw_multi_graph(os, map, graph, attr);
+  qv2tex::draw_multi_graph<M, Colouring>(os, map, graph, attr);
   qv2tex::end(os);
 }
 }
@@ -373,26 +338,28 @@ int main(int argc, char* argv[]) {
     typedef cluster::EquivQuiverMatrix M;
     M matrix(mat_str);
     cluster::MoveGraph<M> move(matrix, qvdraw::consts::Moves);
-    qv2tex::output_multi_graph<const M>(move, os);
+    qv2tex::output_multi_graph<const M, qv2tex::colouring::AllBlack>(move, os);
   } else if (labelled && func == Func::graph) {
     typedef const cluster::QuiverMatrix M;
     M matrix(mat_str);
     if (green) {
       cluster::GreenLabelledQuiverGraph move(matrix, matrix.num_rows(), limit);
-      qv2tex::output_green_multi_graph<M>(move, os);
+      qv2tex::output_multi_graph<M, qv2tex::colouring::GreenSeqExistence<M>>(
+          move, os);
     } else {
       cluster::LabelledQuiverGraph move(matrix, matrix.num_rows(), limit);
-      qv2tex::output_multi_graph<M>(move, os);
+      qv2tex::output_multi_graph<M, qv2tex::colouring::AllBlack>(move, os);
     }
   } else if (func == Func::graph) {
     typedef const cluster::EquivQuiverMatrix M;
     M matrix(mat_str);
     if (green) {
       cluster::GreenQuiverGraph move(matrix, matrix.num_rows(), limit);
-      qv2tex::output_green_multi_graph<M>(move, os);
+      qv2tex::output_multi_graph<M, qv2tex::colouring::GreenSeqExistence<M>>(
+          move, os);
     } else {
       cluster::QuiverGraph move(matrix, matrix.num_rows(), limit);
-      qv2tex::output_multi_graph<M>(move, os);
+      qv2tex::output_multi_graph<M, qv2tex::colouring::AllBlack>(move, os);
     }
   } else if (labelled && func == Func::exchange) {
     typedef const cluster::LabelledSeed M;
@@ -401,10 +368,11 @@ int main(int argc, char* argv[]) {
     M seed(matrix, cluster);
     if (green) {
       cluster::LabelledExchangeGraph move(seed, seed.size(), limit);
-      qv2tex::output_green_multi_graph<M>(move, os);
+      qv2tex::output_multi_graph<M, qv2tex::colouring::GreenSeqExistence<M>>(
+          move, os);
     } else {
       cluster::LabelledExchangeGraph move(seed, seed.size(), limit);
-      qv2tex::output_multi_graph<M>(move, os);
+      qv2tex::output_multi_graph<M, qv2tex::colouring::AllBlack>(move, os);
     }
   } else if (func == Func::exchange) {
     typedef const cluster::Seed M;
@@ -413,10 +381,11 @@ int main(int argc, char* argv[]) {
     M seed(matrix, cluster);
     if (green) {
       cluster::ExchangeGraph move(seed, seed.size(), limit);
-      qv2tex::output_green_multi_graph<M>(move, os);
+      qv2tex::output_multi_graph<M, qv2tex::colouring::GreenSeqExistence<M>>(
+          move, os);
     } else {
       cluster::ExchangeGraph move(seed, seed.size(), limit);
-      qv2tex::output_multi_graph<M>(move, os);
+      qv2tex::output_multi_graph<M, qv2tex::colouring::AllBlack>(move, os);
     }
   } else if (func == Func::cartan) {
     typedef const refl::cartan_exchange::CartanQuiver M;
@@ -433,7 +402,8 @@ int main(int argc, char* argv[]) {
                                                 true};
 
     refl::CartanExchangeGraph graph(initial, m.num_rows(), limit);
-    qv2tex::output_multi_graph<M>(graph, os);
+    qv2tex::output_multi_graph<M, qv2tex::colouring::FullyCompatible>(graph,
+                                                                      os);
   }
   return 0;
 }
