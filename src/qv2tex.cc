@@ -252,7 +252,7 @@ void output_multi_graph(const Graph& multi_gr, std::ostream& os) {
 }
 }
 void usage() {
-  std::cout << "qv2tex -l [-n number] [-q|m|g|e quiver]" << std::endl;
+  std::cout << "qv2tex -lr [-n number] [-q|m|g|e|c quiver]" << std::endl;
   std::cout << "Takes a qv matrix and outputs the TeX to draw the quiver."
             << std::endl;
   std::cout << "   -q Draw a single quiver" << std::endl;
@@ -261,6 +261,7 @@ void usage() {
   std::cout
       << "   -e Draw the exchange graph of a quiver with cluster (x1 ... )"
       << std::endl;
+	std::cout << "   -c Draw the quasi-Cartan companion exchange graph" << std::endl;
   std::cout << "   -l Draw the labelled exchange/quiver graph" << std::endl;
   std::cout << "   -n Limit the number of seeds computed to given number"
             << std::endl;
