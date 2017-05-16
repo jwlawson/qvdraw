@@ -30,6 +30,7 @@
 #include "qv/move_graph.h"
 
 #include "qvrefl/compatible_cartan_iterator.h"
+#include "qvrefl/util.h"
 
 #include "consts.h"
 #include "graph_factory.h"
@@ -53,10 +54,10 @@ void preamble(std::ostream& os) {
   os << "\\tikzstyle{every picture}+=[>=stealth']" << os.widen('\n');
 }
 void begin(std::ostream& os) {
-  os << "\\def\\qvsize{1pt}" << os.widen('\n');
-  os << "\\def\\qvscale{0.05}" << os.widen('\n');
-  os << "\\def\\grsize{0.5pt}" << os.widen('\n');
-  os << "\\def\\grscale{1}" << os.widen('\n');
+  os << "\\def\\qvsize{0.8pt}" << os.widen('\n');
+  os << "\\def\\qvscale{0.60}" << os.widen('\n');
+  os << "\\def\\grsize{4.0pt}" << os.widen('\n');
+  os << "\\def\\grscale{0.5}" << os.widen('\n');
   os << "\\def\\picscale{1}" << os.widen('\n');
   os << "\\begin{document}%" << os.widen('\n');
 }
@@ -160,6 +161,33 @@ struct FullyCompatible {
   }
 };
 }
+namespace vertex_label {
+struct NoLabel {
+  bool has_label(void const* /*ignored */) const { return false; }
+  const char* label(void const* /* ignored */) const { return ""; }
+};
+struct NonCompatibleLabel {
+  typedef refl::cartan_exchange::CartanQuiver Quiver;
+  bool has_label(Quiver const* quiv) const { return !(quiv->fully_compatible); }
+  /* This is a bit of a hack to ensure that the labels are pritned out. I would
+   * prefer it if the ostream could be specified, and if the outputting was more
+   * explicitly done. */
+  const char* label(Quiver const* quiv) {
+    if (quiv->fully_compatible) {
+      return "";
+    }
+    if (count == 0) {
+      std::cerr << "Found non fully compatible cartans:"
+                << std::cerr.widen('\n');
+    }
+    std::cerr << count << ": " << quiv->quiver << std::cerr.widen('\n');
+    return std::to_string(count++).c_str();
+  }
+
+ private:
+  int count = 0;
+};
+}
 std::string int_to_str(int a) {
   char lookup[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'k', 'i', 'j'};
   std::string result;
@@ -172,12 +200,13 @@ std::string int_to_str(int a) {
   }
   return result;
 }
-template <class M, class Colour>
+template <class M, class Colour, class Label = vertex_label::NoLabel>
 void draw_multi_graph(std::ostream& os,
                       const qvdraw::NodeMap<M>& map,
                       const ogdf::Graph& graph,
                       const ogdf::GraphAttributes& attr) {
   static Colour colouring;
+  static Label labelling;
   ogdf::node node;
   std::vector<ogdf::node> nodes_to_remove;
   forall_nodes(node, graph) {
@@ -213,6 +242,12 @@ void draw_multi_graph(std::ostream& os,
        << node->index() << ") at (" << attr.x(node) << "," << attr.y(node)
        << "){\\usebox{\\node" << int_to_str(node->index()) << "}};"
        << os.widen('\n');
+    const M* mat = map.find(node)->second;
+    if (labelling.has_label(mat)) {
+      os << "\\node[draw,very thin,anchor=north east,"
+         << colouring.vertex_colour(mat) << "] at (n" << node->index()
+         << ".north west) {" << labelling.label(mat) << "};" << os.widen('\n');
+    }
   }
   ogdf::edge e;
   forall_edges(e, graph) {
@@ -231,7 +266,10 @@ void draw_multi_graph(std::ostream& os,
   }
   os << "\\end{tikzpicture}}%" << os.widen('\n');
 }
-template <class M, class Colouring, class Graph>
+template <class M,
+          class Colouring,
+          class Graph,
+          class Label = vertex_label::NoLabel>
 void output_multi_graph(const Graph& multi_gr, std::ostream& os) {
   /*
    * NB: The std::move here is important. Otherwise the graph ends up being
@@ -247,26 +285,29 @@ void output_multi_graph(const Graph& multi_gr, std::ostream& os) {
 
   qv2tex::preamble(os);
   qv2tex::begin(os);
-  qv2tex::draw_multi_graph<M, Colouring>(os, map, graph, attr);
+  qv2tex::draw_multi_graph<M, Colouring, Label>(os, map, graph, attr);
   qv2tex::end(os);
 }
 }
 void usage() {
-  std::cout << "qv2tex -lr [-n number] [-q|m|g|e|c quiver]" << std::endl;
+  std::cout << "qv2tex -lr [-n number] [-q|m|g|e|c quiver] [-a cartan]"
+            << std::endl;
   std::cout << "Takes a qv matrix and outputs the TeX to draw the quiver."
             << std::endl;
-  std::cout << "   -q Draw a single quiver" << std::endl;
-  std::cout << "   -m Draw the move graph of a quiver" << std::endl;
-  std::cout << "   -g Draw the quiver graph of a quiver" << std::endl;
-  std::cout
-      << "   -e Draw the exchange graph of a quiver with cluster (x1 ... )"
-      << std::endl;
-	std::cout << "   -c Draw the quasi-Cartan companion exchange graph" << std::endl;
-  std::cout << "   -l Draw the labelled exchange/quiver graph" << std::endl;
-  std::cout << "   -n Limit the number of seeds computed to given number"
+  std::cout << "  -q Draw a single quiver" << std::endl;
+  std::cout << "  -m Draw the move graph of a quiver" << std::endl;
+  std::cout << "  -g Draw the quiver graph of a quiver" << std::endl;
+  std::cout << "  -e Draw the exchange graph of a quiver with cluster (x1 ... )"
+            << std::endl;
+  std::cout << "  -c Draw the quasi-Cartan companion exchange graph"
+            << std::endl;
+  std::cout << "  -a Specify the initial Cartan matrix to use (only with -c)"
+            << std::endl;
+  std::cout << "  -l Draw the labelled exchange/quiver graph" << std::endl;
+  std::cout << "  -n Limit the number of seeds computed to given number"
             << std::endl;
   std::cout
-      << "   -r Don't compute mutations which do not lead to green sequences"
+      << "  -r Don't compute mutations which do not lead to green sequences"
       << std::endl;
 }
 enum Func { quiver, move, graph, exchange, cartan, unset };
@@ -275,10 +316,11 @@ int main(int argc, char* argv[]) {
   bool labelled = false;
   bool green = false;
   std::string mat_str;
+  std::string cartan_str;
   size_t limit = SIZE_MAX;
   int c;
 
-  while ((c = getopt(argc, argv, "c:q:m:g:e:ln:r")) != -1) {
+  while ((c = getopt(argc, argv, "c:q:m:g:e:ln:ra:")) != -1) {
     switch (c) {
       case 'c':
         func = Func::cartan;
@@ -309,10 +351,12 @@ int main(int argc, char* argv[]) {
       case 'r':
         green = true;
         break;
+      case 'a':
+        cartan_str = optarg;
+        break;
       case '?':
         usage();
         return 1;
-        ;
       default:
         usage();
         return 1;
@@ -391,20 +435,37 @@ int main(int argc, char* argv[]) {
   } else if (func == Func::cartan) {
     typedef const refl::cartan_exchange::CartanQuiver M;
     cluster::EquivQuiverMatrix m(mat_str);
-    refl::CompatibleCartanIterator init_cartan_iter(m);
+    arma::Mat<int> cartan;
 
-    if (!init_cartan_iter.has_next()) {
-      std::cerr << "Quiver has no fully compatible matrices"
-                << std::cerr.widen('\n');
-      return 5;
+    if (cartan_str.empty()) {
+      refl::CompatibleCartanIterator init_cartan_iter(m);
+
+      if (!init_cartan_iter.has_next()) {
+        std::cerr << "Quiver has no fully compatible matrices"
+                  << std::cerr.widen('\n');
+        return 5;
+      }
+      cartan = init_cartan_iter.next();
+    } else {
+      cluster::QuiverMatrix cartan_qv{cartan_str};
+      cartan = refl::util::to_arma(cartan_qv);
+
+      refl::FullyCompatibleCheck comp_check;
+      if (!comp_check(m, cartan)) {
+        std::cerr << "Specified cartan matrix is not fully compatible. Not "
+                     "continuing."
+                  << std::endl;
+        return 6;
+      }
     }
 
-    refl::cartan_exchange::CartanQuiver initial{m, init_cartan_iter.next(),
-                                                true};
+    refl::cartan_exchange::CartanQuiver initial{m, cartan, true};
 
     refl::CartanExchangeGraph graph(initial, m.num_rows(), limit);
-    qv2tex::output_multi_graph<M, qv2tex::colouring::FullyCompatible>(graph,
-                                                                      os);
+    qv2tex::output_multi_graph<M, qv2tex::colouring::FullyCompatible,
+                               refl::CartanExchangeGraph,
+                               qv2tex::vertex_label::NonCompatibleLabel>(graph,
+                                                                         os);
   }
   return 0;
 }
